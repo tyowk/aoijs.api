@@ -1,5 +1,5 @@
 # Endpoints
-* **Base URL: https://aoiapi/vercel.app**
+* **Base URL: https://aoiapi.vercel.app**
 
 ---
 
@@ -13,7 +13,7 @@
 
 **Example**
 ```sh
-https://aoiapi/vercel.app/find?name=ban&limit=10
+https://aoiapi.vercel.app/find?name=ban&limit=10
 ```
 
 ---
@@ -27,7 +27,7 @@ https://aoiapi/vercel.app/find?name=ban&limit=10
 
 **Example**
 ```sh
-https://aoiapi/vercel.app/list?limit=20
+https://aoiapi.vercel.app/list?limit=20
 ```
 
 ---
@@ -41,5 +41,5 @@ https://aoiapi/vercel.app/list?limit=20
 
 **Example**
 ```sh
-https://aoiapi/vercel.app/function?name=ban
+https://aoiapi.vercel.app/function?name=ban
 ```
