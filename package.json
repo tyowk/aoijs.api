@@ -1,16 +1,16 @@
 {
-    "name": "aoi.functions",
-    "version": "1.0.0",
-    "main": "index.js",
-    "scripts": {
-        "extract": "node extract.js",
-        "start": "node index.js"
-    },
-    "keywords": [],
-    "author": "Tyowk <tyowk@outlook.com>",
-    "license": "MIT",
-    "dependencies": {
-        "express": "^5.1.0",
-        "fuse.js": "^7.1.0"
-    }
+	"name": "aoi.functions",
+	"version": "1.0.0",
+	"main": "index.js",
+	"scripts": {
+		"extract": "node extract.js",
+		"start": "node index.js"
+	},
+	"keywords": [],
+	"author": "Tyowk <tyowk@outlook.com>",
+	"license": "MIT",
+	"dependencies": {
+		"express": "^5.1.0",
+		"fuse.js": "^7.1.0"
+	}
 }
