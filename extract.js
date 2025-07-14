@@ -1,0 +1,174 @@
+// @ts-check
+
+const FS = require("node:fs");
+const PATH = require("node:path");
+const URL = {
+	"aoi.canvas": "https://aoi.js.org/extensions/aoijs/aoicanvas/functions/",
+	"aoi.js": "https://aoi.js.org/functions/",
+	"aoi.music": "https://aoi.js.org/extensions/aoijs/aoimusic/music/",
+	"aoi.invite": "https://aoi.js.org/extensions/aoijs/aoiinvite/invite/",
+};
+
+const array = [];
+write(PATH.join(__dirname, "docs"), "functions/functions.json");
+
+/**
+ * @param {string} path
+ * @param {string} output
+ * @returns {void}
+ */
+function write(path, output) {
+	const start = performance.now();
+	const data = main(path);
+	FS.rmSync(output, { force: true });
+	FS.writeFileSync(output, JSON.stringify(data, null, 4));
+	console.log(
+		`Wrote ${data.length} functions to ${output} in ${(
+			performance.now() - start
+		).toFixed(2)}ms`,
+	);
+}
+
+/**
+ * @param {string} path
+ * @param {string} [_type]
+ * @returns {Array<{ function: string; description: string; usage: string; parameters: Array<{ field: string; type: string; description: string; required: boolean; }>; example: string; type: string; }>}
+ */
+function main(path, _type) {
+	const files = FS.readdirSync(path);
+	const type = _type && _type !== "functions" ? "aoi." + _type : "aoi.js";
+	const funcType = type
+		.split(".")
+		.map((x) => x[0].toUpperCase() + x.slice(1))
+		.join(".");
+
+	for (const file of files) {
+		const filePath = PATH.join(path, file);
+		const stats = FS.statSync(filePath);
+
+		if (stats.isDirectory()) {
+			main(filePath, file);
+		} else {
+			const md = FS.readFileSync(filePath, "utf8");
+			array.push({
+				function: getTitle(md),
+				description: getDescription(md),
+				usage: getUsage(md),
+				parameters: getParameters(md),
+				example: getExample(md),
+				tip: getTip(md),
+				documentation: getUrl(file, type),
+				type: funcType,
+			});
+		}
+	}
+
+	return array;
+}
+
+/**
+ * @param {string} md
+ * @returns {string | null}
+ */
+function getTitle(md) {
+	const match = md.match(/title:\s*(.+)/);
+	return match ? match[1].trim() : null;
+}
+
+/**
+ * @param {string} md
+ * @returns {string | null}
+ */
+function getDescription(md) {
+	const match = md.match(/description:\s*(.+)/);
+	return match ? match[1].trim() : null;
+}
+
+/**
+ * @param {string} md
+ * @returns {string | null}
+ */
+function getUsage(md) {
+	const match = md.match(/##\s*Usage\s*\n```(aoi)?\s*\n([\s\S]+?)\n```/i);
+	return match ? match[2]?.trim() : null;
+}
+
+/**
+ * @param {string} md
+ * @returns {string | null}
+ */
+function getExample(md) {
+	const match1 = md.match(/<div slot="default">([\s\S]*?)<\/div>/i);
+	if (match1) return match1[1].trim();
+
+	const match2 = md.match(/##\s*Example(?:\(s\))?([\s\S]*)/i);
+	return match2 ? match2[1].trim() : null;
+}
+
+/**
+ * @param {string} md
+ * @returns {Array<{ field: string; type: string; description: string; required: boolean; }>}
+ */
+function getParameters(md) {
+	const lines = md.split("\n");
+	const headerPattern =
+		/^\|\s*Field\s*\|\s*Type\s*\|\s*Description\s*\|\s*Required\s*\|/i;
+	const tableLines = [];
+	let inTable = false;
+
+	for (const line of lines) {
+		if (headerPattern.test(line)) {
+			inTable = true;
+			tableLines.push(line);
+			continue;
+		}
+
+		if (inTable) {
+			if (line.trim().startsWith("|")) {
+				tableLines.push(line);
+			} else {
+				break;
+			}
+		}
+	}
+
+	return tableLines.length >= 3 ? parseParameterTable(tableLines) : [];
+}
+
+/**
+ * @param {string} md
+ * @returns {string | null}
+ */
+function getTip(md) {
+	const match = md.match(/:::tip\[Extension\]([\s\S]*?):::/i);
+	return match ? match[1].trim() : null;
+}
+
+/**
+ * @param {string} file
+ * @param {string} type
+ * @returns {string}
+ */
+function getUrl(file, type) {
+	return URL[type] + file.replace(".md", "").toLowerCase().trim();
+}
+
+/**
+ * @param {string[]} tableLines
+ * @returns {Array<{ field: string; type: string; description: string; required: boolean; }>}
+ */
+function parseParameterTable(tableLines) {
+	const rows = tableLines.slice(2);
+
+	return rows.map((line) => {
+		const cells = line
+			.split("|")
+			.map((c) => c.trim())
+			.filter(Boolean);
+		const field = cells[0].replace(/\?$/, "");
+		const type = (cells[1].match(/\[(.*?)\]/) || [])[1] || cells[1];
+		const description = cells[2]?.replace(/<br>|<br\s*\/>\s*/g, "\n") || "";
+		const required = cells[3]?.toLowerCase() === "true";
+		return { field, type, description, required };
+	});
+}
