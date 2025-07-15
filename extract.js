@@ -2,11 +2,19 @@
 
 const FS = require("node:fs");
 const PATH = require("node:path");
+const CAT = require("./categories/categories.json");
 const URL = {
 	"aoi.canvas": "https://aoi.js.org/extensions/aoijs/aoicanvas/functions/",
 	"aoi.js": "https://aoi.js.org/functions/",
 	"aoi.music": "https://aoi.js.org/extensions/aoijs/aoimusic/music/",
 	"aoi.invite": "https://aoi.js.org/extensions/aoijs/aoiinvite/invite/",
+};
+
+const SOURCE = {
+	"aoi.canvas": "https://github.com/aoijs/aoi.canvas",
+	"aoi.js": "https://github.com/aoijs/aoi.js",
+	"aoi.music": "https://github.com/aoijs/aoi.music",
+	"aoi.invite": "https://github.com/aoijs/aoi.invite",
 };
 
 const array = [];
@@ -32,7 +40,7 @@ function write(path, output) {
 /**
  * @param {string} path
  * @param {string} [_type]
- * @returns {Array<{ function: string; description: string; usage: string; parameters: Array<{ field: string; type: string; description: string; required: boolean; }>; example: string; type: string; }>}
+ * @returns {Array<{ function: string; description: string; tip: string; source: string; usage: string; parameters: Array<{ field: string; type: string; description: string; required: boolean; }>; example: string; type: string; }>}
  */
 function main(path, _type) {
 	const files = FS.readdirSync(path);
@@ -50,14 +58,16 @@ function main(path, _type) {
 			main(filePath, file);
 		} else {
 			const md = FS.readFileSync(filePath, "utf8");
+			const funcName = getTitle(md) ?? "";
 			array.push({
-				function: getTitle(md),
+				function: funcName,
 				description: getDescription(md),
 				usage: getUsage(md),
 				parameters: getParameters(md),
 				example: getExample(md),
 				tip: getTip(md),
 				documentation: getUrl(file, type),
+				source: getSource(type, funcName),
 				type: funcType,
 			});
 		}
@@ -150,7 +160,24 @@ function getTip(md) {
  * @returns {string}
  */
 function getUrl(file, type) {
-	return URL[type] + file.replace(".md", "").toLowerCase().trim();
+	return (
+		URL[type] +
+		file
+			.replace(/\.md(x)?/gi, "")
+			.toLowerCase()
+			.trim()
+	);
+}
+
+/**
+ * @param {string} type
+ * @param {string} name
+ * @returns {string}
+ */
+function getSource(type, name) {
+	return type === "aoi.js"
+		? `${SOURCE[type]}/tree/v6/src/functions/${CAT[name.replace("$", "").toLowerCase() ?? ""]}/${name.replace("$", "")}.js`
+		: SOURCE[type];
 }
 
 /**
