@@ -12,6 +12,7 @@ function collectCategories(baseDir) {
 	 * @type {Record<string, string>}
 	 */
 	const result = {};
+	const start = performance.now();
 
 	/**
 	 * @param {string} dir
@@ -35,6 +36,11 @@ function collectCategories(baseDir) {
 	}
 
 	walk(baseDir, PATH.basename(baseDir));
+	console.log(
+		`Wrote ${Object.keys(result).length} functions to categories/categories.json in ${(
+			performance.now() - start
+		).toFixed(2)}ms`,
+	);
 	return result;
 }
 

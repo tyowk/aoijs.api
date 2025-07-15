@@ -4,7 +4,9 @@
 	"main": "index.js",
 	"scripts": {
 		"extract": "node extract.js",
-		"start": "node index.js"
+		"category": "node category.js",
+		"server": "node index.js",
+		"start": "npm run category && npm run extract && npm run server"
 	},
 	"keywords": [],
 	"author": "Tyowk <tyowk@outlook.com>",
