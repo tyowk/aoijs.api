@@ -65,6 +65,7 @@ function main(path, _type) {
 				usage: getUsage(md),
 				parameters: getParameters(md),
 				example: getExample(md),
+				extras: getExtraTable(md),
 				tip: getTip(md),
 				documentation: getUrl(file, type),
 				source: getSource(type, funcName),
@@ -99,7 +100,7 @@ function getDescription(md) {
  * @returns {string | null}
  */
 function getUsage(md) {
-	const match = md.match(/##\s*Usage\s*\n```(aoi)?\s*\n([\s\S]+?)\n```/i);
+	const match = md.match(/##\s*Usage\s*```(aoi)?\s*\n([\s\S]+?)```/i);
 	return match ? match[2]?.trim() : null;
 }
 
@@ -122,7 +123,7 @@ function getExample(md) {
 function getParameters(md) {
 	const lines = md.split("\n");
 	const headerPattern =
-		/^\|\s*Field\s*\|\s*Type\s*\|\s*Description\s*\|\s*Required\s*\|/i;
+		/\|\s*Field\s*\|\s*Type\s*\|\s*Description\s*\|\s*Required\s*\|/i;
 	const tableLines = [];
 	let inTable = false;
 
@@ -193,9 +194,63 @@ function parseParameterTable(tableLines) {
 			.map((c) => c.trim())
 			.filter(Boolean);
 		const field = cells[0].replace(/\?$/, "");
-		const type = (cells[1].match(/\[(.*?)\]/) || [])[1] || cells[1];
+		const type = cells[1];
 		const description = cells[2]?.replace(/<br>|<br\s*\/>\s*/g, "\n") || "";
 		const required = cells[3]?.toLowerCase() === "true";
 		return { field, type, description, required };
 	});
+}
+
+/**
+ * @param {string} md
+ * @returns {Array<{ name: string; data: any; }>}
+ */
+function getExtraTable(md) {
+	const lines = md.split("\n");
+	let tables = [],
+		current = { name: null, data: [] },
+		inTable = false;
+
+	for (const line of lines) {
+		const match = line.match(/#\s*(.+)/i);
+		const section = match?.[1]?.trim();
+		if (["Usage", "Example", "Examples", "Parameters", "Parameter", "Example(s)"].includes(section)) continue;
+		if (!current.name) current.name = section?.replace(/#/g, "").trim();
+
+		if (line.trim().startsWith("|")) {
+			inTable = true;
+			current.data.push(line);
+		} else if (inTable) {
+			if (current.data.length >= 3) tables.push(current);
+			current = { name: null, data: [] };
+			inTable = false;
+		}
+	}
+
+	if (inTable && current.data.length >= 3) tables.push(current);
+	if (tables.length < 2) return [];
+
+	return tables.slice(1).map(parseGenericTable);
+}
+
+/**
+ * @param {{ name: string; data: string[]; }} table
+ * @returns {{ name: string; data: any; }}
+ */
+function parseGenericTable(table) {
+	const headers = table.data[0].split("|").map(h => h.trim()).filter(Boolean);
+	const rows = table.data.slice(2);
+	let data = rows.map(line => {
+		const cells = line.split("|").map(c => c.trim()).filter(Boolean);
+		return headers.reduce((obj, key, i) => {
+			obj[key] = cells[i] ?? "";
+			return obj;
+		}, {});
+	});
+
+	if (data.every(row => Object.keys(row).length === 1)) {
+		data = data.map(row => Object.values(row)[0]);
+	}
+
+	return { name: table.name || headers[0], data };
 }
