@@ -38,12 +38,20 @@ app.all("/function", (req, res) => {
 	if (!name || typeof name !== "string") {
 		return res.status(400).json({
 			status: 400,
-			message: "Missing or invalid 'name' query parameter",
+			message: "Missing or Invalid 'name' Query Parameter",
 			data: null,
 		});
 	}
 
 	const result = func(name);
+	if (!result) {
+		return res.status(404).json({
+			status: 404,
+			message: "Function Not Found",
+			data: null,
+		});
+	}
+	
 	return res.status(200).json({ status: 200, data: result });
 });
 
@@ -53,12 +61,20 @@ app.all("/function/:name", (req, res) => {
 	if (!name || typeof name !== "string") {
 		return res.status(400).json({
 			status: 400,
-			message: "Missing or invalid 'name' route parameter",
+			message: "Missing or Invalid 'name' Route Parameter",
 			data: null,
 		});
 	}
 
 	const result = func(name);
+	if (!result) {
+		return res.status(404).json({
+			status: 404,
+			message: "Function Not Found",
+			data: null,
+		});
+	}
+	
 	return res.status(200).json({ status: 200, data: result });
 });
 
